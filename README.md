@@ -3,6 +3,7 @@ A restful GO backend to track, compute, and compare golf scores and stats among 
 
 ...More to follow
 
+![Alt text](img/schema.png?raw=true "Optional Title")
 
 # Useful Stuff to Know
 * Go Rest API: http://thenewstack.io/make-a-restful-json-api-go/
