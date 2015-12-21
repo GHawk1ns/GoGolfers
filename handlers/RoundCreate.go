@@ -10,9 +10,19 @@ import (
 	"github.com/ghawk1ns/golf/database"
 	"github.com/ghawk1ns/golf/util"
 	"github.com/ghawk1ns/golf/blah"
+	"fmt"
 )
 
 func RoundCreate(w http.ResponseWriter, r *http.Request) {
+
+	secret := r.Header.Get("secret")
+	if secret != util.GetSecret() {
+		w.Header().Set("Content-Type", "application/text; charset=UTF-8")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "https://www.youtube.com/watch?v=QDySGUFAom0")
+		return
+	}
+
 	var round model.Round
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {

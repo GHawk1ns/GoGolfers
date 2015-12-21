@@ -10,6 +10,7 @@ var configPointer *Configuration
 
 // Config corresponding to config.json go in here
 type Configuration struct {
+	Secret      string 		`json:"secret"`
 	Port        string 		`json:"port"`
 	SQLConfig   SQLConfig 	`json:"sql"`
 	HBaseConfig HBaseConfig `json:"hbase"`
@@ -42,4 +43,8 @@ func GetConfig() Configuration {
 		}
 	}
 	return *configPointer
+}
+
+func GetSecret() string {
+	return GetConfig().Secret
 }
