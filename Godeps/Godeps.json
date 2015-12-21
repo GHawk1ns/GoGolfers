@@ -1,0 +1,36 @@
+{
+	"ImportPath": "github.com/ghawk1ns/golf",
+	"GoVersion": "go1.5.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-125-gd512f20",
+			"Rev": "d512f204a577a4ab037a1816604c48c9c13210be"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "68415e7123da32b07eab49c96d2c4d6158360e9b"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "1c83b3eabd45b6d76072b66b746c20815fb2872d"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Rev": "9c068cf16d982f8bd444b8c352acbeec34c4fe5b"
+		},
+		{
+			"ImportPath": "github.com/lazyshot/go-hbase",
+			"Comment": "0.1.0-13-g3145bb5",
+			"Rev": "3145bb5a8134d658c0ee81369978ef9cee64ba52"
+		},
+		{
+			"ImportPath": "github.com/op/go-logging",
+			"Rev": "dfaf3dff9b631bc4236201d90d41ee0de9202889"
+		},
+		{
+			"ImportPath": "github.com/samuel/go-zookeeper/zk",
+			"Rev": "218e9c81c0dd8b3b18172b2bbfad92cc7d6db55f"
+		}
+	]
+}
