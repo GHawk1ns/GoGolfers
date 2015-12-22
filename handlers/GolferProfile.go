@@ -59,14 +59,14 @@ func onGolferProfileError(w http.ResponseWriter, err error) {
 }
 
 func getStats(golferId string) (model.Stats, error) {
-	roundAvg := make(chan string)
-	numRounds := make(chan string)
+	roundAvg := make(chan int)
+	numRounds := make(chan int)
 
 	go func() {
 		result, err := database.GetGolferAverage(golferId)
 		if err != nil {
 			// TODO figure out wtf to do if something fails in a channel
-			roundAvg <- ""
+			roundAvg <- -1
 		} else {
 			roundAvg <- result
 		}
@@ -76,14 +76,14 @@ func getStats(golferId string) (model.Stats, error) {
 		result, err := database.GetGolferNumRounds(golferId)
 		if err != nil {
 			// TODO figure out wtf to do if something fails in a channel
-			numRounds <- ""
+			numRounds <- -1
 		} else {
 			numRounds <- result
 		}
 	}()
 
 	stats := model.Stats{ <- numRounds, <- roundAvg, nil}
-	if stats.Rounds == "" || stats.Average == "" {
+	if stats.Rounds == -1 || stats.Average == -1 {
 		return stats, errors.New("something went wrong with stat gathering")
 	} else {
 		return stats, nil

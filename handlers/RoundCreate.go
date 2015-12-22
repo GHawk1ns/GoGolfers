@@ -84,25 +84,17 @@ func updateStats(round model.Round) {
 		score := score.Score
 		blah.Info.Printf("Updating stats for %s who just shot a %s\n", golferId, score)
 
-		currentNumRounds, err := database.GetGolferNumRounds(golferId)
+		numRounds, err := database.GetGolferNumRounds(golferId)
 
 		if err != nil {
 			blah.Error.Println(err.Error())
 			continue
 		} else {
-			blah.Info.Printf("%s: currentNumRounds: %s\n", golferId, currentNumRounds)
+			numRounds++
+			blah.Info.Printf("%s: new numRounds: %s\n", golferId, numRounds)
 		}
 
-		newNumRounds, err := util.IncStringNumber(currentNumRounds)
-
-		if err != nil {
-			blah.Error.Println(err.Error())
-			continue
-		} else {
-			blah.Info.Printf("%s: newNumRounds: %s\n", golferId, newNumRounds)
-		}
-
-		err = database.SetGolferNumRounds(golferId, newNumRounds)
+		err = database.SetGolferNumRounds(golferId, numRounds)
 
 		if err != nil {
 			blah.Error.Println(err.Error())
@@ -118,7 +110,7 @@ func updateStats(round model.Round) {
 			blah.Info.Printf("%s: currentAverage: %s\n", golferId, currentAverage)
 		}
 
-		newAverage, err := util.CalcNewAverage(currentAverage, newNumRounds, score)
+		newAverage, err := util.CalcNewAverage(currentAverage, numRounds, score)
 
 		if err != nil {
 			blah.Error.Println(err.Error())

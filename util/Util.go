@@ -1,9 +1,7 @@
 package util
 import (
-"time"
-"strconv"
-"fmt"
-	"errors"
+	"time"
+	"strconv"
 )
 
 // returns the date formatted as mmddyyyy
@@ -13,29 +11,24 @@ func GetDate() string {
 }
 
 //given a number as a string, increment it
-func IncStringNumber(number string) (string, error) {
-	i, err := strconv.Atoi(number)
-	if err != nil {
-		fmt.Printf("thisis num", string(i))
-		return "", err
-	} else {
-		return strconv.Itoa(i+1), nil
-	}
+func CalcNewAverage(oldAverage float64, numRounds int, newScore int) float64 {
+	return (oldAverage * (float64(numRounds) - 1) + float64(newScore)) / float64(numRounds)
 }
 
-//given a number as a string, increment it
-func CalcNewAverage(oldAverageStr string, numRoundsStr string, newScoreStr string) (string, error) {
-	oldAverage, errA := strconv.ParseFloat(oldAverageStr, 64)
-	newScore, errB := strconv.ParseFloat(newScoreStr, 64)
-	numRounds, errC := strconv.ParseFloat(numRoundsStr, 64)
+func IntToStr(num int) string {
+	return strconv.Itoa(num)
+}
 
-	if errA != nil || errB != nil || errC != nil {
-		return "", errors.New("parameters were not numbers")
-	}
+func FloatToStr(num float64) string {
+	return strconv.FormatFloat(num, 'f', 10, 64)
+}
 
-	newAverage := (oldAverage * (numRounds - 1) + newScore) / numRounds
+func StrToInt(num string) (int, error) {
+	return strconv.Atoi(num)
+}
 
-	return strconv.FormatFloat(newAverage, 'f', 10, 64), nil
+func StrToFloat(num string) (float64, error) {
+	return strconv.ParseFloat(num, 64)
 }
 
 func MakeTimestamp() string {

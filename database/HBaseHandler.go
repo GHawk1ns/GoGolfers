@@ -35,14 +35,15 @@ func PutRound(round model.Round) error {
 	var puts []*hbase.Put
 	for _, score := range round.Scores {
 		golferId := score.GolferId
-		score := score.Score
+		score := util.IntToStr(score.Score)
 		rowId := getRowId(golferId)
 
 		put := hbase.CreateNewPut([]byte(rowId))
-		put.AddStringValue(cfScores, getColQualifier(date), score)
+		colQual := getColQualifier(date)
+		put.AddStringValue(cfScores, colQual, score)
 
 		puts = append(puts, put)
-		blah.Info.Printf("%s: putting %s into scores:%s", rowId, score, cfScores)
+		blah.Info.Printf("%s: putting %s into scores:%s", rowId, score, colQual)
 	}
 
 	res, err := client.Puts(tableName, puts)
@@ -61,8 +62,8 @@ func PutRound(round model.Round) error {
 	return nil;
 }
 
-func GetScoresForGolfer(golferId string) (map[string]string, error) {
-	scores := make(map[string]string)
+func GetScoresForGolfer(golferId string) (map[string]int, error) {
+	scores := make(map[string]int)
 	rowId := getRowId(golferId)
 	blah.Info.Printf("%s: getting scores", rowId)
 	get := hbase.CreateNewGet([]byte(rowId))
@@ -79,7 +80,14 @@ func GetScoresForGolfer(golferId string) (map[string]string, error) {
 		datePlayed := getColumnId(columnName)
 		blah.Info.Printf("%s: datePlayed: %s", rowId, datePlayed)
 		encodedScore := scoreColumn.Value
-		scores[datePlayed] = encodedScore.String()
+
+		score, err := util.StrToInt(encodedScore.String())
+		if err != nil {
+			blah.Error.Println(err.Error())
+			return nil, err
+		}
+
+		scores[datePlayed] = score
 		blah.Info.Printf("%s: %s:%s\n", rowId, datePlayed, encodedScore.String())
 	}
 
@@ -87,10 +95,10 @@ func GetScoresForGolfer(golferId string) (map[string]string, error) {
 }
 
 
-func SetGolferNumRounds(golferId string, rounds string) error {
+func SetGolferNumRounds(golferId string, rounds int) error {
 	rowId := getRowId(golferId)
 	put := hbase.CreateNewPut([]byte(rowId))
-	put.AddStringValue(cfStats, colRounds, rounds)
+	put.AddStringValue(cfStats, colRounds, util.IntToStr(rounds))
 	res, err := client.Put(tableName, put)
 
 	if err != nil {
@@ -102,7 +110,7 @@ func SetGolferNumRounds(golferId string, rounds string) error {
 	return nil;
 }
 
-func GetGolferNumRounds(golferId string) (string, error) {
+func GetGolferNumRounds(golferId string) (int, error) {
 	rowId := getRowId(golferId)
 
 	get := hbase.CreateNewGet([]byte(rowId))
@@ -110,25 +118,30 @@ func GetGolferNumRounds(golferId string) (string, error) {
 	rowResult, err := client.Get(tableName, get)
 
 	if err != nil {
-		return "", err
+		return -1, err
 	}
 	// this result could be empty
 	rowColResult := rowResult.Columns[getFullColumnName(cfStats, colRounds)]
-	var result string
+	var result int
 	if rowColResult == nil {
 		// If the value isn't stored, then this golfer hasn't played any rounds yet
-		result = "0"
+		result = 0
 	} else {
-		result = rowColResult.Value.String()
+		result, err = util.StrToInt(rowColResult.Value.String())
+		if err != nil {
+			blah.Error.Println(err.Error())
+			return -1, err
+		}
+
 	}
 	return result, nil
 }
 
 
-func SetGolferAverage(golferId string, average string) error {
+func SetGolferAverage(golferId string, average float64) error {
 	rowId := getRowId(golferId)
 	put := hbase.CreateNewPut([]byte(rowId))
-	put.AddStringValue(cfStats, colAverage, average)
+	put.AddStringValue(cfStats, colAverage, util.FloatToStr(average))
 	res, err := client.Put(tableName, put)
 
 	if err != nil {
@@ -140,7 +153,7 @@ func SetGolferAverage(golferId string, average string) error {
 	return nil;
 }
 
-func GetGolferAverage(golferId string) (string, error) {
+func GetGolferAverage(golferId string) (float64, error) {
 	rowId := getRowId(golferId)
 
 	get := hbase.CreateNewGet([]byte(rowId))
@@ -148,16 +161,20 @@ func GetGolferAverage(golferId string) (string, error) {
 	rowResult, err := client.Get(tableName, get)
 
 	if err != nil {
-		return "", err
+		return -1, err
 	}
 	// this result could be empty
 	rowColResult := rowResult.Columns[getFullColumnName(cfStats, colAverage)]
-	var result string
+	var result float64
 	if rowColResult == nil {
 		// If the value isn't stored, then this golfer hasn't played any rounds yet
-		result = "0"
+		result = 0
 	} else {
-		result = rowColResult.Value.String()
+		result, err = util.StrToFloat(rowColResult.Value.String())
+		if err != nil {
+			blah.Error.Println(err.Error())
+			return -1, err
+		}
 	}
 	return result, nil
 }
@@ -228,8 +245,8 @@ func Test(test_val string) error {
 
 func ResetUser(golferId string) error {
 
-	SetGolferAverage(golferId, "0")
-	SetGolferNumRounds(golferId, "0")
+	SetGolferAverage(golferId, 0)
+	SetGolferNumRounds(golferId, 0)
 
 	rowId := getRowId(golferId)
 	get := hbase.CreateNewGet([]byte(rowId))

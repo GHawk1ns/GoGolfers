@@ -4,5 +4,5 @@ package model
 type Profile struct {
 	Golfer  Golfer 	 		  `json:"golfer"`
 	Stats 	Stats 	 		  `json:"stats"`
-	Scores  map[string]string `json:"scores"`
+	Scores  map[string]int    `json:"scores"`
 }
