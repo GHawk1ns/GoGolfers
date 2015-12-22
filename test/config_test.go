@@ -3,13 +3,13 @@ import (
 	"os"
 	"testing"
 	"github.com/ghawk1ns/golf/util"
-	"github.com/ghawk1ns/golf/blah"
+	"github.com/ghawk1ns/golf/logger"
 	"io/ioutil"
 )
 
 
 func TestLog(t *testing.T) {
-	blah.InitLog(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
+	logger.InitLog(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
 }
 
 func TestConfig(t *testing.T) {

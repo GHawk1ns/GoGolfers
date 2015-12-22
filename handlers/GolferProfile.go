@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ghawk1ns/golf/model"
 	"errors"
-"github.com/ghawk1ns/golf/blah"
+	"github.com/ghawk1ns/golf/logger"
 )
 
 func GolferProfile(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +45,7 @@ func GolferProfile(w http.ResponseWriter, r *http.Request) {
 		onGolferProfileError(w, err)
 		return
 	} else {
-		blah.Info.Println("golferProfile: ", string(b))
+		logger.Info.Println("golferProfile: ", string(b))
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, string(b))
 	}
@@ -54,7 +54,7 @@ func GolferProfile(w http.ResponseWriter, r *http.Request) {
 // This is not a good way to do this
 func onGolferProfileError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusBadRequest)
-	blah.Error.Println("an error occured:", err.Error())
+	logger.Error.Println("an error occured:", err.Error())
 	fmt.Fprintln(w, nil)
 }
 
@@ -67,7 +67,7 @@ func getStats(golferId string) (model.Stats, error) {
 	go func() {
 		result, err := database.GetGolferAverage(golferId)
 		if err != nil {
-			blah.Error.Println(err)
+			logger.Error.Println(err)
 			roundAvg <- -1
 		} else {
 			roundAvg <- result
@@ -78,7 +78,7 @@ func getStats(golferId string) (model.Stats, error) {
 	go func() {
 		result, err := database.GetGolferNumRounds(golferId)
 		if err != nil {
-			blah.Error.Println(err)
+			logger.Error.Println(err)
 			numRounds <- -1
 		} else {
 			numRounds <- result
@@ -87,19 +87,19 @@ func getStats(golferId string) (model.Stats, error) {
 
 	// retrieve the golfer's victory over other golfers
 	go func() {
-		blah.Info.Println("Getting win stats for", golferId)
+		logger.Info.Println("Getting win stats for", golferId)
 		wins, err := database.GetGolferWins(golferId)
 		if err != nil {
-			blah.Error.Println(err)
+			logger.Error.Println(err)
 			winCounts <- nil
 		} else {
 			var localWinCounts []model.WinCount
 			for opponentId,count := range wins {
 				golfer, err := database.GetGolferById(opponentId)
 				if err != nil {
-					blah.Error.Println(err.Error())
+					logger.Error.Println(err.Error())
 				} else {
-					blah.Info.Printf("%s has beaten %s, %d times\n", golferId, golfer.Name, count)
+					logger.Info.Printf("%s has beaten %s, %d times\n", golferId, golfer.Name, count)
 					localWinCounts = append(localWinCounts, model.WinCount{golfer, count})
 				}
 

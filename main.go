@@ -7,11 +7,11 @@ import (
 	"github.com/ghawk1ns/golf/util"
 	"github.com/ghawk1ns/golf/routes"
 	"github.com/ghawk1ns/golf/database"
-	"github.com/ghawk1ns/golf/blah"
+	"github.com/ghawk1ns/golf/logger"
 )
 
 func main() {
-	blah.InitLog(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
+	logger.InitLog(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
 	config := util.GetConfig()
 	database.InitHBase(config.HBaseConfig)
 	database.InitSQL(config.SQLConfig)
@@ -20,6 +20,6 @@ func main() {
 	// We should never arrive here in most cases
 	if err != nil {
 		database.TryClose()
-		blah.Error.Fatal(err)
+		logger.Error.Fatal(err)
 	}
 }

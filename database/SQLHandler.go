@@ -4,14 +4,14 @@ import (
 	"github.com/ghawk1ns/golf/model"
 	"github.com/ghawk1ns/golf/util"
 	"database/sql"
-	"github.com/ghawk1ns/golf/blah"
+	"github.com/ghawk1ns/golf/logger"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 var db *sql.DB
 
 func InitSQL(dbConfig util.SQLConfig) {
-	blah.Info.Println("initializing database")
+	logger.Info.Println("initializing database")
 	// [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
 	dataSourceName := dbConfig.User + ":" + dbConfig.Password + "@tcp("+ dbConfig.Host + ":" + dbConfig.Port + ")/" + dbConfig.Database
 	var err error
@@ -19,7 +19,7 @@ func InitSQL(dbConfig util.SQLConfig) {
 	if err != nil {
 		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
 	} else {
-		blah.Info.Println("sql connection opened")
+		logger.Info.Println("sql connection opened")
 	}
 
 	// Open doesn't open a connection. Validate DSN data:
@@ -27,7 +27,7 @@ func InitSQL(dbConfig util.SQLConfig) {
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	} else {
-		blah.Info.Println("sql connection established")
+		logger.Info.Println("sql connection established")
 	}
 }
 
@@ -41,7 +41,7 @@ func GetGolfers() ([]model.Golfer, error) {
 	var golfers []model.Golfer
 	rows, err := db.Query("SELECT * FROM golfers")
 	if err != nil {
-		blah.Error.Println("fuck not good: ", err)
+		logger.Error.Println("fuck not good: ", err)
 		panic(err.Error())
 	}
 	defer rows.Close()
@@ -52,7 +52,7 @@ func GetGolfers() ([]model.Golfer, error) {
 		var imageUrl []byte
 		err = rows.Scan(&golferId, &name, &imageUrl)
 		if err != nil {
-			blah.Error.Println("bad row bro: ", err)
+			logger.Error.Println("bad row bro: ", err)
 		} else {
 			golfers = append(golfers, model.Golfer{golferId, name, string(imageUrl)})
 		}
@@ -73,12 +73,12 @@ func getGolferByName(name string) (model.Golfer, error) {
 // For Testing
 func getGolfer(field string, value string) (model.Golfer, error) {
 
-	blah.Info.Printf("GetGolfer: field -> %s, value -> %s\n", field, value)
+	logger.Info.Printf("GetGolfer: field -> %s, value -> %s\n", field, value)
 
 	// Execute the query
 	rows, err := db.Query("SELECT * FROM golfers WHERE " + field + "=" + value)
 	if err != nil {
-		blah.Error.Println("fuck not good: ", err)
+		logger.Error.Println("fuck not good: ", err)
 		panic(err.Error())
 	}
 	defer rows.Close()
@@ -88,7 +88,7 @@ func getGolfer(field string, value string) (model.Golfer, error) {
 		var imageUrl []byte
 		err = rows.Scan(&golferId, &name, &imageUrl)
 		if err != nil {
-			blah.Error.Println("bad row bro: ", err)
+			logger.Error.Println("bad row bro: ", err)
 		} else {
 			return model.Golfer{golferId, name, string(imageUrl)}, err
 		}

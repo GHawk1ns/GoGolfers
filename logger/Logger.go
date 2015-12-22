@@ -1,4 +1,4 @@
-package blah
+package logger
 
 import (
 	"log"

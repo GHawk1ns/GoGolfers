@@ -7,7 +7,7 @@ import (
 	"github.com/ghawk1ns/golf/util"
 	"github.com/lazyshot/go-hbase"
 	"github.com/ghawk1ns/golf/model"
-	"github.com/ghawk1ns/golf/blah"
+	"github.com/ghawk1ns/golf/logger"
 )
 
 var tableName string
@@ -25,10 +25,10 @@ var colWinsPrefix = "wins.over.%s"
 var client *hbase.Client
 
 func InitHBase(hbaseConfig util.HBaseConfig) {
-	blah.Info.Println("Initiallizing hbase")
+	logger.Info.Println("Initiallizing hbase")
 	client = hbase.NewClient([]string{hbaseConfig.Host}, hbaseConfig.Root)
 	tableName = hbaseConfig.Table
-	blah.Info.Println("hbase ready -> ", tableName, cfScores, cfStats)
+	logger.Info.Println("hbase ready -> ", tableName, cfScores, cfStats)
 }
 
 func PutRound(round model.Round) error {
@@ -44,52 +44,52 @@ func PutRound(round model.Round) error {
 		put.AddStringValue(cfScores, colQual, score)
 
 		puts = append(puts, put)
-		blah.Info.Printf("%s: putting %s into scores:%s", rowId, score, colQual)
+		logger.Info.Printf("%s: putting %s into scores:%s", rowId, score, colQual)
 	}
 
 	res, err := client.Puts(tableName, puts)
 
 	if err != nil {
-		blah.Error.Printf(err.Error())
+		logger.Error.Printf(err.Error())
 		return err
 	}
 
 	if !res {
-		blah.Error.Printf("No Results saved")
+		logger.Error.Printf("No Results saved")
 		return errors.New("No results saved")
 	}
 
-	blah.Info.Println("Completed put")
+	logger.Info.Println("Completed put")
 	return nil;
 }
 
 func GetScoresForGolfer(golferId string) (map[string]int, error) {
 	scores := make(map[string]int)
 	rowId := getRowId(golferId)
-	blah.Info.Printf("%s: getting scores", rowId)
+	logger.Info.Printf("%s: getting scores", rowId)
 	get := hbase.CreateNewGet([]byte(rowId))
 	get.AddStringFamily(cfScores)
 	result, err := client.Get(tableName, get)
 
 	if err != nil {
-		blah.Error.Printf(err.Error())
+		logger.Error.Printf(err.Error())
 		return scores, err
 	}
 
 	for columnName, scoreColumn := range result.Columns {
-		blah.Info.Printf("%s: columnName: %s", rowId, columnName)
+		logger.Info.Printf("%s: columnName: %s", rowId, columnName)
 		datePlayed := getColumnId(columnName)
-		blah.Info.Printf("%s: datePlayed: %s", rowId, datePlayed)
+		logger.Info.Printf("%s: datePlayed: %s", rowId, datePlayed)
 		encodedScore := scoreColumn.Value
 
 		score, err := util.StrToInt(encodedScore.String())
 		if err != nil {
-			blah.Error.Println(err.Error())
+			logger.Error.Println(err.Error())
 			return nil, err
 		}
 
 		scores[datePlayed] = score
-		blah.Info.Printf("%s: %s:%s\n", rowId, datePlayed, encodedScore.String())
+		logger.Info.Printf("%s: %s:%s\n", rowId, datePlayed, encodedScore.String())
 	}
 
 	return scores, nil
@@ -130,7 +130,7 @@ func GetGolferNumRounds(golferId string) (int, error) {
 	} else {
 		result, err = util.StrToInt(rowColResult.Value.String())
 		if err != nil {
-			blah.Error.Println(err.Error())
+			logger.Error.Println(err.Error())
 			return -1, err
 		}
 
@@ -173,7 +173,7 @@ func GetGolferAverage(golferId string) (float64, error) {
 	} else {
 		result, err = util.StrToFloat(rowColResult.Value.String())
 		if err != nil {
-			blah.Error.Println(err.Error())
+			logger.Error.Println(err.Error())
 			return -1, err
 		}
 	}
@@ -195,7 +195,7 @@ func SetGolferWins(golferId string, wins map[string]int) error {
 	if err != nil {
 		return err
 	} else if !res {
-		blah.Error.Println(err.Error())
+		logger.Error.Println(err.Error())
 		return errors.New("No results saved")
 	}
 
@@ -209,23 +209,23 @@ func GetGolferWins(golferId string) (map[string]int, error) {
 	get.AddStringFamily(cfWins)
 	rowResult, err := client.Get(tableName, get)
 	if err != nil {
-		blah.Error.Println(err.Error())
+		logger.Error.Println(err.Error())
 		return nil, err
 	}
 
 	wins := make(map[string]int)
 	for columnName, columnValue := range rowResult.Columns {
-		blah.Info.Printf("%s: columnName: %s", rowId, columnName)
+		logger.Info.Printf("%s: columnName: %s", rowId, columnName)
 		opponentId := getGolferIdFromWinColumn(getColumnId(columnName))
 		numWinsEncoded := columnValue.Value
 		numWins, err := util.StrToInt(numWinsEncoded.String())
 		if err != nil {
-			blah.Error.Println(err.Error())
+			logger.Error.Println(err.Error())
 			return nil, err
 		}
 
 		wins[opponentId] = numWins
-		blah.Info.Printf("%s: %s:%d\n", rowId, opponentId, numWins)
+		logger.Info.Printf("%s: %s:%d\n", rowId, opponentId, numWins)
 	}
 	return wins, nil
 }
@@ -270,7 +270,7 @@ func Test(test_val string) error {
 	if !res {
 		return errors.New("No Put Result")
 	}
-	blah.Info.Println("Completed put")
+	logger.Info.Println("Completed put")
 
 	get := hbase.CreateNewGet([]byte("test1"))
 	result, err := client.Get("test", get)
@@ -287,7 +287,7 @@ func Test(test_val string) error {
 		return errors.New("Value doesn't match")
 	}
 
-	blah.Info.Println("Completed get")
+	logger.Info.Println("Completed get")
 
 	results, err := client.Gets("test", []*hbase.Get{get})
 
@@ -295,7 +295,7 @@ func Test(test_val string) error {
 		return err
 	}
 
-	blah.Info.Printf("hbase test success: %#v\n", results)
+	logger.Info.Printf("hbase test success: %#v\n", results)
 	return nil
 }
 

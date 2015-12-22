@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"github.com/ghawk1ns/golf/database"
-	"github.com/ghawk1ns/golf/blah"
+	"github.com/ghawk1ns/golf/logger"
 )
 
 func Golfers(w http.ResponseWriter, r *http.Request) {
@@ -26,6 +26,6 @@ func Golfers(w http.ResponseWriter, r *http.Request) {
 
 func onGolferError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
-	blah.Error.Println("an error occured:", err)
+	logger.Error.Println("an error occured:", err)
 	fmt.Fprintln(w, nil)
 }

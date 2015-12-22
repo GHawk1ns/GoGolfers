@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 	"github.com/gorilla/mux"
-	"github.com/ghawk1ns/golf/blah"
+	"github.com/ghawk1ns/golf/logger"
 )
 
 func NewRouter() *mux.Router {
@@ -13,7 +13,7 @@ func NewRouter() *mux.Router {
 		var handler http.Handler
 
 		handler = route.HandlerFunc
-		handler = blah.HTTPLogger(handler, route.Name)
+		handler = logger.HTTPLogger(handler, route.Name)
 
 		router.
 		Methods(route.Method).

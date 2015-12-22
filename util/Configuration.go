@@ -3,7 +3,7 @@ package util
 import (
 	"os"
 	"encoding/json"
-	"github.com/ghawk1ns/golf/blah"
+	"github.com/ghawk1ns/golf/logger"
 )
 
 var configPointer *Configuration
@@ -33,13 +33,13 @@ type HBaseConfig struct {
 // http://stackoverflow.com/a/16466189
 func GetConfig() Configuration {
 	if (configPointer == nil) {
-		blah.Info.Println("Creating new config")
+		logger.Info.Println("Creating new config")
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)
 		configPointer = &Configuration{}
 		err := decoder.Decode(configPointer)
 		if err != nil {
-			blah.Error.Println("error:", err)
+			logger.Error.Println("error:", err)
 		}
 	}
 	return *configPointer
