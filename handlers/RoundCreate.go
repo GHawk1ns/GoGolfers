@@ -69,7 +69,7 @@ func validateRound(round model.Round) error {
 			if score.GolferId == "" {
 				return errors.New("golferId must not be empty")
 			}
-			if score.Score == "" {
+			if score.Score == 0 {
 				return errors.New("golferId: " + score.GolferId + " score must not be empty")
 			}
 		}
@@ -78,11 +78,14 @@ func validateRound(round model.Round) error {
 	return nil
 }
 
+/**
+	Updates stats after a new round has been submitted
+ */
 func updateStats(round model.Round) {
 	for _, score := range round.Scores {
 		golferId := score.GolferId
 		score := score.Score
-		blah.Info.Printf("Updating stats for %s who just shot a %s\n", golferId, score)
+		blah.Info.Printf("Updating stats for %s who just shot a %d\n", golferId, score)
 
 		numRounds, err := database.GetGolferNumRounds(golferId)
 
@@ -110,18 +113,26 @@ func updateStats(round model.Round) {
 			blah.Info.Printf("%s: currentAverage: %s\n", golferId, currentAverage)
 		}
 
-		newAverage, err := util.CalcNewAverage(currentAverage, numRounds, score)
-
-		if err != nil {
-			blah.Error.Println(err.Error())
-			continue
-		} else {
-			blah.Info.Printf("%s: newAverage: %s\n", golferId, newAverage)
-		}
+		newAverage := util.CalcNewAverage(currentAverage, numRounds, score)
+		blah.Info.Printf("%s: newAverage: %s\n", golferId, newAverage)
 
 		err = database.SetGolferAverage(golferId, newAverage)
 		if err != nil {
 			blah.Error.Println(err.Error())
 		}
+
+		// Increase victory count over other golfers
+		wins, err := database.GetGolferWins(golferId)
+		if err != nil {
+			blah.Error.Println(err.Error())
+			continue
+		}
+		for _, opponentScoreInfo := range round.Scores {
+			opponentId := opponentScoreInfo.GolferId
+			if golferId != opponentId && score < opponentScoreInfo.Score {
+				wins[opponentId] = wins[opponentId] + 1
+			}
+		}
+		database.SetGolferWins(golferId, wins)
 	}
 }

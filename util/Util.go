@@ -4,11 +4,6 @@ import (
 	"strconv"
 )
 
-// returns the date formatted as mmddyyyy
-func GetDate() string {
-	t := time.Now()
-	return t.Format("01022006")
-}
 
 //given a number as a string, increment it
 func CalcNewAverage(oldAverage float64, numRounds int, newScore int) float64 {
@@ -33,4 +28,9 @@ func StrToFloat(num string) (float64, error) {
 
 func MakeTimestamp() string {
 	return strconv.FormatInt(time.Now().UnixNano() / int64(time.Millisecond, ), 10)
+}
+// returns the date formatted as mmddyyyy
+func GetDate() string {
+	t := time.Now()
+	return t.Format("01022006")
 }

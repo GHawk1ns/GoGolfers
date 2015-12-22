@@ -11,16 +11,6 @@ import (
 )
 
 func main() {
-
-	/**
-		A basic restful API
-
-		TODO: Handle errors better
-		TODO: Clean up unused endpoints
-		TODO: Add cooler, newer endpoints
-		TODO: Auth
-	 */
-
 	blah.InitLog(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
 	config := util.GetConfig()
 	database.InitHBase(config.HBaseConfig)

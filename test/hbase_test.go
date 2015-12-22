@@ -61,11 +61,61 @@ func TestGetScoresForGolfer(t *testing.T) {
 		t.Error(err)
 	} else if val == nil {
 		t.Fail()
-	} else if val[util.GetDate()] != 18 {
+	} else {
+		for _,score := range val {
+			if score != 18 {
+				t.Fail()
+			}
+		}
+	}
+}
+
+func TestEmptyGolferWins(t *testing.T) {
+	wins := make(map[string]int)
+	err := database.SetGolferWins("empty", wins)
+	if err != nil {
 		t.Fail()
 	}
 }
 
+func TestGolferWins(t *testing.T) {
+
+	wins := make(map[string]int)
+	wins["JordanSpieth"] = 0
+	wins["kimJongUn"] = 1
+	wins["goku"] = 2
+	wins["foo"] = 4
+	
+	
+	err := database.SetGolferWins("guy", wins)
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err := database.GetGolferWins("guy")
+	if err != nil {
+		t.Error(err)
+	} else if val == nil {
+		t.Fail()
+	} else {
+		for opponentId,wins := range val {
+			var expected int
+			switch opponentId {
+			case "JordanSpieth":
+				expected = 0
+			case "kimJongUn":
+				expected = 1
+			case "goku":
+				expected = 2
+			case "foo":
+				expected = 4
+			}
+			if wins != expected {
+				t.Fail()
+			}
+		}
+	}
+}
 
 func TestGolferAverage(t *testing.T) {
 

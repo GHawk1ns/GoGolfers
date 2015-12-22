@@ -59,30 +59,56 @@ func onGolferProfileError(w http.ResponseWriter, err error) {
 }
 
 func getStats(golferId string) (model.Stats, error) {
-	roundAvg := make(chan int)
+	roundAvg := make(chan float64)
 	numRounds := make(chan int)
+	winCounts := make(chan []model.WinCount)
 
+	// retrieve the golfer's average
 	go func() {
 		result, err := database.GetGolferAverage(golferId)
 		if err != nil {
-			// TODO figure out wtf to do if something fails in a channel
+			blah.Error.Println(err)
 			roundAvg <- -1
 		} else {
 			roundAvg <- result
 		}
 	}()
 
+	// retrieve the golfer's total rounds played
 	go func() {
 		result, err := database.GetGolferNumRounds(golferId)
 		if err != nil {
-			// TODO figure out wtf to do if something fails in a channel
+			blah.Error.Println(err)
 			numRounds <- -1
 		} else {
 			numRounds <- result
 		}
 	}()
 
-	stats := model.Stats{ <- numRounds, <- roundAvg, nil}
+	// retrieve the golfer's victory over other golfers
+	go func() {
+		blah.Info.Println("Getting win stats for", golferId)
+		wins, err := database.GetGolferWins(golferId)
+		if err != nil {
+			blah.Error.Println(err)
+			winCounts <- nil
+		} else {
+			var localWinCounts []model.WinCount
+			for opponentId,count := range wins {
+				golfer, err := database.GetGolferById(opponentId)
+				if err != nil {
+					blah.Error.Println(err.Error())
+				} else {
+					blah.Info.Printf("%s has beaten %s, %d times\n", golferId, golfer.Name, count)
+					localWinCounts = append(localWinCounts, model.WinCount{golfer, count})
+				}
+
+			}
+			winCounts <- localWinCounts
+		}
+	}()
+
+	stats := model.Stats{ <- numRounds, <- roundAvg, <- winCounts}
 	if stats.Rounds == -1 || stats.Average == -1 {
 		return stats, errors.New("something went wrong with stat gathering")
 	} else {

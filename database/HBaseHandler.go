@@ -15,12 +15,13 @@ var tableName string
 // The hbase table must define these column families
 var cfScores = "scores"
 var cfStats = "stats"
+var cfWins = "wins"
 
 var colRounds = "rds"
 var colAverage = "avg"
 
 var rowIdPrefix = "golfer:%s"
-var colWinsPrefix = "wins.golfer.%s"
+var colWinsPrefix = "wins.over.%s"
 var client *hbase.Client
 
 func InitHBase(hbaseConfig util.HBaseConfig) {
@@ -179,6 +180,56 @@ func GetGolferAverage(golferId string) (float64, error) {
 	return result, nil
 }
 
+func SetGolferWins(golferId string, wins map[string]int) error {
+	rowId := getRowId(golferId)
+
+	var puts []*hbase.Put
+	for opponentId, wins := range wins {
+		put := hbase.CreateNewPut([]byte(rowId))
+		put.AddStringValue(cfWins, getWinColumnId(opponentId), util.IntToStr(wins))
+		puts = append(puts, put)
+	}
+
+	res, err := client.Puts(tableName, puts)
+
+	if err != nil {
+		return err
+	} else if !res {
+		blah.Error.Println(err.Error())
+		return errors.New("No results saved")
+	}
+
+	return nil;
+}
+
+func GetGolferWins(golferId string) (map[string]int, error) {
+	rowId := getRowId(golferId)
+
+	get := hbase.CreateNewGet([]byte(rowId))
+	get.AddStringFamily(cfWins)
+	rowResult, err := client.Get(tableName, get)
+	if err != nil {
+		blah.Error.Println(err.Error())
+		return nil, err
+	}
+
+	wins := make(map[string]int)
+	for columnName, columnValue := range rowResult.Columns {
+		blah.Info.Printf("%s: columnName: %s", rowId, columnName)
+		opponentId := getGolferIdFromWinColumn(getColumnId(columnName))
+		numWinsEncoded := columnValue.Value
+		numWins, err := util.StrToInt(numWinsEncoded.String())
+		if err != nil {
+			blah.Error.Println(err.Error())
+			return nil, err
+		}
+
+		wins[opponentId] = numWins
+		blah.Info.Printf("%s: %s:%d\n", rowId, opponentId, numWins)
+	}
+	return wins, nil
+}
+
 // cf:columnid -> [cf, columnId] -> columnId
 func getColumnId(columnName string) string {
 	columnSlice := strings.SplitN(columnName, ":", 2)
@@ -197,8 +248,13 @@ func getColQualifier(date string) string {
 	return fmt.Sprintf("%s.%s", date, util.MakeTimestamp())
 }
 
-func getWinColumn(opponentId string) string {
+func getWinColumnId(opponentId string) string {
 	return fmt.Sprintf(colWinsPrefix, opponentId)
+}
+
+func getGolferIdFromWinColumn(winColumnId string) string {
+	columnSlice := strings.SplitN(winColumnId, ".", 3)
+	return columnSlice[2]
 }
 
 func Test(test_val string) error {
@@ -239,7 +295,7 @@ func Test(test_val string) error {
 		return err
 	}
 
-	fmt.Printf("%#v\n", results)
+	blah.Info.Printf("hbase test success: %#v\n", results)
 	return nil
 }
 
