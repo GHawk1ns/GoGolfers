@@ -23,24 +23,24 @@ func RoundCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var round model.Round
+	round := &model.Round{}
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		handleError(w, err, 422)
 	} else if err := r.Body.Close(); err != nil {
 		handleError(w, err, 500)
-	} else if err := json.Unmarshal(body, &round); err != nil {
+	} else if err := json.Unmarshal(body, round); err != nil {
 		handleError(w, err, 400)
 	} else if err := validateRound(round); err != nil {
 		handleError(w, err, 400)
 	} else {
-		if err := database.PutRound(round); err != nil {
+		if err := database.PutRound(*round); err != nil {
 			handleError(w, err, 500)
 		} else {
-			go updateStats(round)
+			go updateStats(*round)
 			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 			w.WriteHeader(http.StatusCreated)
-			if err := json.NewEncoder(w).Encode(round); err != nil {
+			if err := json.NewEncoder(w).Encode(*round); err != nil {
 				panic(err)
 			}
 		}
@@ -56,14 +56,16 @@ func handleError(w http.ResponseWriter, err error, code int) {
 	}
 }
 
-func validateRound(round model.Round) error {
+func validateRound(round *model.Round) error {
 	logger.Info.Println("Validating Round")
 	if round.Date == "" {
 		round.Date = util.GetDate()
 	}
 
 	if len(round.Scores) == 0 {
-		return errors.New("Must include at least 1 score")
+		  errors.New("Must include at least 1 score")
+	} else if round.CourseId == "" {
+		return errors.New("Must include course id")
 	} else {
 		for _, score := range round.Scores {
 			if score.GolferId == "" {
@@ -74,6 +76,12 @@ func validateRound(round model.Round) error {
 			}
 		}
 	}
+
+	_, err := database.GetCourseById(round.CourseId)
+	if err != nil {
+		return errors.New("Invalid golf course id")
+	}
+
 	logger.Info.Println("Round is Valid")
 	return nil
 }
@@ -82,6 +90,9 @@ func validateRound(round model.Round) error {
 	Updates stats after a new round has been submitted
  */
 func updateStats(round model.Round) {
+
+	// TODO: Update stats for golf course
+
 	for _, score := range round.Scores {
 		golferId := score.GolferId
 		score := score.Score

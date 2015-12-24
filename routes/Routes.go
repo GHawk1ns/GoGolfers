@@ -45,4 +45,10 @@ var routes = Routes{
 		"/golfers/{id}",
 		handlers.GolferProfile,
 	},
+	Route{
+		"GolfCourses",
+		"GET",
+		"/courses",
+		handlers.GolfCourses,
+	},
 }

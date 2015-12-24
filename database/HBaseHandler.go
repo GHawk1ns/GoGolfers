@@ -21,6 +21,8 @@ var colRounds = "rds"
 var colAverage = "avg"
 
 var rowIdPrefix = "golfer:%s"
+// courseId.date.timestamp
+var colScoreQual = "%s.%s.%s"
 var colWinsPrefix = "wins.over.%s"
 var client *hbase.Client
 
@@ -40,7 +42,7 @@ func PutRound(round model.Round) error {
 		rowId := getRowId(golferId)
 
 		put := hbase.CreateNewPut([]byte(rowId))
-		colQual := getColQualifier(date)
+		colQual := getColQualifier(round.CourseId, date)
 		put.AddStringValue(cfScores, colQual, score)
 
 		puts = append(puts, put)
@@ -63,8 +65,8 @@ func PutRound(round model.Round) error {
 	return nil;
 }
 
-func GetScoresForGolfer(golferId string) (map[string]int, error) {
-	scores := make(map[string]int)
+func GetScoresForGolfer(golferId string) (map[string]map[string]int, error) {
+	allScores := make(map[string]map[string]int)
 	rowId := getRowId(golferId)
 	logger.Info.Printf("%s: getting scores", rowId)
 	get := hbase.CreateNewGet([]byte(rowId))
@@ -73,12 +75,12 @@ func GetScoresForGolfer(golferId string) (map[string]int, error) {
 
 	if err != nil {
 		logger.Error.Printf(err.Error())
-		return scores, err
+		return allScores, err
 	}
 
 	for columnName, scoreColumn := range result.Columns {
 		logger.Info.Printf("%s: columnName: %s", rowId, columnName)
-		datePlayed := getColumnId(columnName)
+		courseId, datePlayed := GetScoreInfoFromColId(getColumnId(columnName))
 		logger.Info.Printf("%s: datePlayed: %s", rowId, datePlayed)
 		encodedScore := scoreColumn.Value
 
@@ -88,11 +90,19 @@ func GetScoresForGolfer(golferId string) (map[string]int, error) {
 			return nil, err
 		}
 
-		scores[datePlayed] = score
-		logger.Info.Printf("%s: %s:%s\n", rowId, datePlayed, encodedScore.String())
+		courseScores, ok := allScores[courseId]
+		if !ok {
+			logger.Info.Println("Creating new map")
+			courseScores = make(map[string]int)
+			allScores[courseId] = courseScores
+		} else {
+			logger.Info.Println("map exists")
+		}
+		courseScores[datePlayed] = score
+		logger.Info.Printf("%s: %s-%s:%d\n", rowId, courseId, datePlayed, score)
 	}
 
-	return scores, nil
+	return allScores, nil
 }
 
 
@@ -236,6 +246,14 @@ func getColumnId(columnName string) string {
 	return columnSlice[1]
 }
 
+// colScoreQual -> courseId.date.timestamp
+func GetScoreInfoFromColId(columnName string) (string, string) {
+	logger.Info.Println("ScoreInfo: %s", columnName)
+	columnSlice := strings.SplitN(columnName, ".", 3)
+	logger.Info.Printf("ScoreInfo: %s - %s\n", columnSlice[0], columnSlice[1])
+	return columnSlice[0],columnSlice[1]
+}
+
 func getFullColumnName(colFamily string, colQualifier string) string {
 	return fmt.Sprintf("%s:%s", colFamily, colQualifier)
 }
@@ -244,8 +262,8 @@ func getRowId(golferId string) string {
 	return fmt.Sprintf(rowIdPrefix, golferId)
 }
 
-func getColQualifier(date string) string {
-	return fmt.Sprintf("%s.%s", date, util.MakeTimestamp())
+func getColQualifier(courseId, date string) string {
+	return fmt.Sprintf(colScoreQual, courseId, date, util.MakeTimestamp())
 }
 
 func getWinColumnId(opponentId string) string {

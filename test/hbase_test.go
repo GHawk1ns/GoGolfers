@@ -41,6 +41,7 @@ func TestPutRound(t *testing.T) {
 
 	var round model.Round
 	round.Date = util.GetDate()
+	round.CourseId = "1"
 
 	var scoreA = model.Score{"foo", 107}
 	var scoreB = model.Score{"guy", 87}
@@ -62,9 +63,11 @@ func TestGetScoresForGolfer(t *testing.T) {
 	} else if val == nil {
 		t.Fail()
 	} else {
-		for _,score := range val {
-			if score != 18 {
-				t.Fail()
+		for _,scores := range val {
+			for _,score := range scores {
+				if score != 18 {
+					t.Fail()
+				}
 			}
 		}
 	}

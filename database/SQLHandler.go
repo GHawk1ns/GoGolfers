@@ -37,6 +37,27 @@ func TryClose() {
 	}
 }
 
+func GetCourses() ([]model.GolfCourse, error) {
+	var courses []model.GolfCourse
+	rows, err := db.Query("SELECT id,name FROM courses")
+	if err != nil {
+		logger.Error.Println("fuck not good: ", err)
+		panic(err.Error())
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var courseId string
+		var name string
+		err = rows.Scan(&courseId, &name)
+		if err != nil {
+			logger.Error.Println("bad row bro: ", err)
+		} else {
+			courses = append(courses, model.GolfCourse{courseId, name})
+		}
+	}
+	return courses, nil
+}
+
 func GetGolfers() ([]model.Golfer, error) {
 	var golfers []model.Golfer
 	rows, err := db.Query("SELECT * FROM golfers")
@@ -94,4 +115,39 @@ func getGolfer(field string, value string) (model.Golfer, error) {
 		}
 	}
 	return model.Golfer{}, err;
+}
+
+// For Testing
+func GetCourseById(id string) (model.GolfCourse, error) {
+	return getCourse("id", id)
+}
+
+// For Testing
+func getCourseByName(name string) (model.GolfCourse, error) {
+	return getCourse("name", name)
+}
+
+// For Testing
+func getCourse(field string, value string) (model.GolfCourse, error) {
+
+	logger.Info.Printf("getCourse: field -> %s, value -> %s\n", field, value)
+
+	// Execute the query
+	rows, err := db.Query("SELECT id,name FROM courses WHERE " + field + "=" + value)
+	if err != nil {
+		logger.Error.Println("fuck not good: ", err)
+		panic(err.Error())
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var courseId string
+		var name string
+		err = rows.Scan(&courseId, &name)
+		if err != nil {
+			logger.Error.Println("bad row bro: ", err)
+		} else {
+			return model.GolfCourse{courseId, name}, err
+		}
+	}
+	return model.GolfCourse{}, err;
 }
