@@ -2,7 +2,7 @@ package model
 
 // Describes the skill level of a golfer
 type Stats struct {
-	Rounds    int     	 `json:"rounds"`
-	Average   float64    `json:"average"`
-	Wins 	  []WinCount `json:"wins"`
+	Rounds    map[string]int		`json:"rounds"`
+	Averages  map[string]float64 	`json:"averages"`
+	Wins 	  []WinCount			`json:"wins"`
 }

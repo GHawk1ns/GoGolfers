@@ -18,7 +18,11 @@ var cfStats = "stats"
 var cfWins = "wins"
 
 var colRounds = "rds"
+var colRoundsFmt = "rds.%s"
+
 var colAverage = "avg"
+var colAverageFmt = "avg.%s"
+
 
 var rowIdPrefix = "golfer:%s"
 // courseId.date.timestamp
@@ -106,10 +110,10 @@ func GetScoresForGolfer(golferId string) (map[string]map[string]int, error) {
 }
 
 
-func SetGolferNumRounds(golferId string, rounds int) error {
+func SetGolferNumRounds(golferId string, courseId string, rounds int) error {
 	rowId := getRowId(golferId)
 	put := hbase.CreateNewPut([]byte(rowId))
-	put.AddStringValue(cfStats, colRounds, util.IntToStr(rounds))
+	put.AddStringValue(cfStats, getRndColId(courseId), util.IntToStr(rounds))
 	res, err := client.Put(tableName, put)
 
 	if err != nil {
@@ -121,18 +125,46 @@ func SetGolferNumRounds(golferId string, rounds int) error {
 	return nil;
 }
 
-func GetGolferNumRounds(golferId string) (int, error) {
+func IncGolferTotalRounds(golferId string) error {
 	rowId := getRowId(golferId)
-
+	colId := getRndColId("total")
 	get := hbase.CreateNewGet([]byte(rowId))
-	get.AddStringColumn(cfStats, colRounds)
+	get.AddStringColumn(cfStats, colId)
+	rowResult, err := client.Get(tableName, get)
+
+	if err != nil {
+		return err
+	}
+	// this result could be empty
+	rowColResult := rowResult.Columns[getFullColumnName(cfStats, colId)]
+	var result int
+	if rowColResult == nil {
+		// If the value isn't stored, then this golfer hasn't played any rounds yet
+		result = 0
+	} else {
+		result, err = util.StrToInt(rowColResult.Value.String())
+		if err != nil {
+			logger.Error.Println(err.Error())
+			return err
+		}
+
+	}
+
+	return SetGolferNumRounds(golferId, "total", result + 1)
+}
+
+func GetGolferNumRounds(golferId string, courseId string) (int, error) {
+	rowId := getRowId(golferId)
+	colId := getRndColId(courseId)
+	get := hbase.CreateNewGet([]byte(rowId))
+	get.AddStringColumn(cfStats, colId)
 	rowResult, err := client.Get(tableName, get)
 
 	if err != nil {
 		return -1, err
 	}
 	// this result could be empty
-	rowColResult := rowResult.Columns[getFullColumnName(cfStats, colRounds)]
+	rowColResult := rowResult.Columns[getFullColumnName(cfStats, colId)]
 	var result int
 	if rowColResult == nil {
 		// If the value isn't stored, then this golfer hasn't played any rounds yet
@@ -149,10 +181,11 @@ func GetGolferNumRounds(golferId string) (int, error) {
 }
 
 
-func SetGolferAverage(golferId string, average float64) error {
+func SetGolferAverage(golferId string, courseId string, average float64) error {
 	rowId := getRowId(golferId)
+	colId := getAvgColId(courseId)
 	put := hbase.CreateNewPut([]byte(rowId))
-	put.AddStringValue(cfStats, colAverage, util.FloatToStr(average))
+	put.AddStringValue(cfStats, colId, util.FloatToStr(average))
 	res, err := client.Put(tableName, put)
 
 	if err != nil {
@@ -164,18 +197,18 @@ func SetGolferAverage(golferId string, average float64) error {
 	return nil;
 }
 
-func GetGolferAverage(golferId string) (float64, error) {
+func GetGolferAverage(golferId string, courseId string) (float64, error) {
 	rowId := getRowId(golferId)
-
+	colId := getAvgColId(courseId)
 	get := hbase.CreateNewGet([]byte(rowId))
-	get.AddStringColumn(cfStats, colAverage)
+	get.AddStringColumn(cfStats, colId)
 	rowResult, err := client.Get(tableName, get)
 
 	if err != nil {
 		return -1, err
 	}
 	// this result could be empty
-	rowColResult := rowResult.Columns[getFullColumnName(cfStats, colAverage)]
+	rowColResult := rowResult.Columns[getFullColumnName(cfStats, colId)]
 	var result float64
 	if rowColResult == nil {
 		// If the value isn't stored, then this golfer hasn't played any rounds yet
@@ -188,6 +221,63 @@ func GetGolferAverage(golferId string) (float64, error) {
 		}
 	}
 	return result, nil
+}
+
+
+func GetAllRoundsForGolfer(golferId string) (map[string]int, error) {
+	result, err := getStatsForGolfer(golferId, colRounds)
+	if err != nil {
+		return nil, err
+	}
+	convertedResult := make(map[string]int)
+	for key,val := range result {
+		newVal, err := util.StrToInt(val)
+		if err != nil {
+			return nil, err
+		} else {
+			convertedResult[key] = newVal
+		}
+	}
+	return convertedResult, nil
+}
+
+func GetAllAveragesForGolfer(golferId string) (map[string]float64, error) {
+	result, err := getStatsForGolfer(golferId, colAverage)
+	if err != nil {
+		return nil, err
+	}
+	convertedResult := make(map[string]float64)
+	for key,val := range result {
+		newVal, err := util.StrToFloat(val)
+		if err != nil {
+			return nil, err
+		} else {
+			convertedResult[key] = newVal
+		}
+	}
+	return convertedResult, nil
+}
+
+func getStatsForGolfer(golferId string, preferredStatType string) (map[string]string, error) {
+	rowId := getRowId(golferId)
+	get := hbase.CreateNewGet([]byte(rowId))
+	get.AddStringFamily(cfStats)
+	rowResult, err := client.Get(tableName, get)
+
+	if err != nil {
+		return nil, err
+	}
+	stats := make(map[string]string)
+	for _, resultRowCol := range rowResult.Columns {
+		logger.Info.Printf("%s: columnName: %s-%s\n", rowId, resultRowCol.Family.String(), resultRowCol.Qualifier.String())
+		statType, courseId := GetStatInfoFromColId(resultRowCol.Qualifier.String())
+		if statType == preferredStatType {
+			encodedStat := resultRowCol.Value
+			stats[courseId] = encodedStat.String()
+			logger.Info.Printf("%s: %s-%s:%s\n", rowId, courseId, statType, encodedStat.String())
+		}
+	}
+	return stats, nil
 }
 
 func SetGolferWins(golferId string, wins map[string]int) error {
@@ -254,8 +344,25 @@ func GetScoreInfoFromColId(columnName string) (string, string) {
 	return columnSlice[0],columnSlice[1]
 }
 
+// stat col qual -> type.courseId
+// type -> rds or avg
+func GetStatInfoFromColId(columnName string) (string, string) {
+	logger.Info.Printf("StatInfoColdId: %s\n", columnName)
+	columnSlice := strings.SplitN(columnName, ".", 2)
+	logger.Info.Printf("StatInfo from Col: %s - %s\n", columnSlice[0], columnSlice[1])
+	return columnSlice[0],columnSlice[1]
+}
+
 func getFullColumnName(colFamily string, colQualifier string) string {
 	return fmt.Sprintf("%s:%s", colFamily, colQualifier)
+}
+
+func getAvgColId(courseId string) string {
+	return fmt.Sprintf(colAverageFmt, courseId)
+}
+
+func getRndColId(courseId string) string {
+	return fmt.Sprintf(colRoundsFmt, courseId)
 }
 
 func getRowId(golferId string) string {
@@ -319,8 +426,6 @@ func Test(test_val string) error {
 
 func ResetUser(golferId string) error {
 
-	SetGolferAverage(golferId, 0)
-	SetGolferNumRounds(golferId, 0)
 
 	rowId := getRowId(golferId)
 	get := hbase.CreateNewGet([]byte(rowId))

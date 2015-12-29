@@ -21,13 +21,13 @@ func TestGeneralPutGet(t *testing.T) {
 
 func TestGolferTotalRound(t *testing.T) {
 
-	err := database.SetGolferNumRounds("1", 23)
+	err := database.SetGolferNumRounds("1", "course", 23)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	getResult, err := database.GetGolferNumRounds("1")
+	getResult, err := database.GetGolferNumRounds("1", "course")
 
 	if err != nil {
 		t.Error(err)
@@ -122,13 +122,13 @@ func TestGolferWins(t *testing.T) {
 
 func TestGolferAverage(t *testing.T) {
 
-	err := database.SetGolferAverage("average_golfer", 3.14159)
+	err := database.SetGolferAverage("average_golfer", "course", 3.14159)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	getResult, err := database.GetGolferAverage("average_golfer")
+	getResult, err := database.GetGolferAverage("average_golfer", "course")
 
 	if err != nil {
 		t.Error(err)
@@ -139,14 +139,14 @@ func TestGolferAverage(t *testing.T) {
 
 func TestGetStats(t *testing.T) {
 
-	database.SetGolferAverage("stats_man", 24)
-	database.SetGolferNumRounds("stats_man", 56)
+	database.SetGolferAverage("stats_man", "course", 24)
+	database.SetGolferNumRounds("stats_man", "course", 56)
 
-	roundAvg := make(chan float64)
-	numRounds := make(chan int)
+	roundAvg := make(chan map[string]float64)
+	numRounds := make(chan map[string]int)
 
 	go func() {
-		result, err := database.GetGolferAverage("stats_man")
+		result, err := database.GetAllAveragesForGolfer("stats_man")
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -155,7 +155,7 @@ func TestGetStats(t *testing.T) {
 	}()
 
 	go func() {
-		result, err := database.GetGolferNumRounds("stats_man")
+		result, err := database.GetAllRoundsForGolfer("stats_man")
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -165,11 +165,11 @@ func TestGetStats(t *testing.T) {
 
 	stats := model.Stats{ <- numRounds, <- roundAvg, nil}
 
-	if stats.Average != 24 {
+	if stats.Averages["course"] != 24 {
 		t.Fail()
 	}
 
-	if stats.Rounds != 56 {
+	if stats.Rounds["course"] != 56 {
 		t.Fail()
 	}
 }
