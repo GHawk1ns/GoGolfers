@@ -83,7 +83,7 @@ func GetGolfers() ([]model.Golfer, error) {
 
 // For Testing
 func GetGolferById(golferId string) (model.Golfer, error) {
-	return getGolfer("golferId", golferId)
+	return getGolfer("id", golferId)
 }
 
 // For Testing

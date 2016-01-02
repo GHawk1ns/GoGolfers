@@ -16,7 +16,7 @@ func GolfCourses(w http.ResponseWriter, r *http.Request) {
 	} else {
 		courseMap := make(map[string]string)
 		for _,golfCourse := range rawCourses {
-			courseMap[golfCourse.CourseId] = golfCourse.Name
+			courseMap[golfCourse.Id] = golfCourse.Name
 		}
 		b, err := json.Marshal(courseMap)
 		if err != nil {

@@ -30,7 +30,7 @@ func GolferProfile(w http.ResponseWriter, r *http.Request) {
 		result.Golfer = golfer
 	}
 
-	scores, err := database.GetScoresForGolfer(golfer.GolferId)
+	scores, err := database.GetScoresForGolfer(golfer.Id)
 	if err != nil {
 		onGolferError(w, err)
 		return
