@@ -14,7 +14,11 @@ func GolfCourses(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		onGolferError(w, err)
 	} else {
-		b, err := json.Marshal(rawCourses)
+		courseMap := make(map[string]string)
+		for _,golfCourse := range rawCourses {
+			courseMap[golfCourse.CourseId] = golfCourse.Name
+		}
+		b, err := json.Marshal(courseMap)
 		if err != nil {
 			onCourseError(w, err)
 		} else {
