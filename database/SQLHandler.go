@@ -39,7 +39,7 @@ func TryClose() {
 
 func GetCourses() ([]model.GolfCourse, error) {
 	var courses []model.GolfCourse
-	rows, err := db.Query("SELECT id,name FROM courses")
+	rows, err := db.Query("SELECT id,name FROM golf_stats_course")
 	if err != nil {
 		logger.Error.Println("fuck not good: ", err)
 		panic(err.Error())
@@ -60,7 +60,7 @@ func GetCourses() ([]model.GolfCourse, error) {
 
 func GetGolfers() ([]model.Golfer, error) {
 	var golfers []model.Golfer
-	rows, err := db.Query("SELECT * FROM golfers")
+	rows, err := db.Query("SELECT * FROM golf_stats_golfer")
 	if err != nil {
 		logger.Error.Println("fuck not good: ", err)
 		panic(err.Error())
@@ -97,7 +97,7 @@ func getGolfer(field string, value string) (model.Golfer, error) {
 	logger.Info.Printf("GetGolfer: field -> %s, value -> %s\n", field, value)
 
 	// Execute the query
-	rows, err := db.Query("SELECT * FROM golfers WHERE " + field + "=" + value)
+	rows, err := db.Query("SELECT * FROM golf_stats_golfer WHERE " + field + "=" + value)
 	if err != nil {
 		logger.Error.Println("fuck not good: ", err)
 		panic(err.Error())
@@ -133,7 +133,7 @@ func getCourse(field string, value string) (model.GolfCourse, error) {
 	logger.Info.Printf("getCourse: field -> %s, value -> %s\n", field, value)
 
 	// Execute the query
-	rows, err := db.Query("SELECT id,name FROM courses WHERE " + field + "=" + value)
+	rows, err := db.Query("SELECT id,name FROM golf_stats_course WHERE " + field + "=" + value)
 	if err != nil {
 		logger.Error.Println("fuck not good: ", err)
 		panic(err.Error())
