@@ -1,10 +1,16 @@
 {
+  "secret”:”*****************************”,
   "port":"8080",
   "sql": {
-    "user":"user",
-    "password":"password",
-    "host":"127.0.0.1",
+    "user”:”user”,
+    "password”:”password”,
+    "host”:”host”,
     "port":"3306",
-    "database":"foo"
+    "database”:”database”
+    },
+  "hbase": {
+    "host”:”host”,
+    "root”:”root”,
+    "table”:”table”
   }
 }
